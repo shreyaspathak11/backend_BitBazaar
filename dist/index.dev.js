@@ -1,94 +1,139 @@
 "use strict";
 
-var express = require("express");
+var express = require('express');
 
-var mongoose = require("mongoose");
+var cors = require('cors');
 
-var cors = require("cors");
+var mongoose = require('mongoose');
 
-var bodyParser = require("body-parser");
+var bodyParser = require('body-parser');
+
+var User = require('./models/user.model');
+
+var jwt = require('jsonwebtoken');
+
+var bcrypt = require('bcryptjs');
 
 var app = express();
-app.use(bodyParser.json());
-app.use(cors());
-app.use(bodyParser.urlencoded({
+app.use(bodyParser.json({
+  limit: '30mb',
   extended: true
 }));
-mongoose.connect('mongodb://127.0.0.1:27017/myLoginRegisterDB', {
+app.use(bodyParser.urlencoded({
+  limit: '30mb',
+  extended: true
+}));
+app.use(cors());
+var CONNECTION_URL = 'mongodb+srv://dummy123:dummy123@bitbazaar.imeimd6.mongodb.net/';
+var PORT = process.env.PORT || 5000;
+mongoose.connect(CONNECTION_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(function () {
-  return console.log("MongoDB connected");
-})["catch"](function (err) {
-  return console.log(err);
+  return app.listen(PORT, function () {
+    return console.log("Server Running on Port: http://localhost:".concat(PORT));
+  });
+})["catch"](function (error) {
+  return console.log("".concat(error, " did not connect"));
 });
-var userSchema = new mongoose.Schema({
-  firstName: String,
-  lastName: String,
-  email: String,
-  password: String
-}); //Model
+app.post('/api/register', function _callee(req, res) {
+  var newPassword;
+  return regeneratorRuntime.async(function _callee$(_context) {
+    while (1) {
+      switch (_context.prev = _context.next) {
+        case 0:
+          console.log(req.body);
+          _context.prev = 1;
+          _context.next = 4;
+          return regeneratorRuntime.awrap(bcrypt.hash(req.body.password, 10));
 
-var User = mongoose.model("User", userSchema); //Routes
+        case 4:
+          newPassword = _context.sent;
+          _context.next = 7;
+          return regeneratorRuntime.awrap(User.create({
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            password: newPassword
+          }));
 
-app.post("/register", function (req, res) {
-  var _req$body = req.body,
-      firstName = _req$body.firstName,
-      lastName = _req$body.lastName,
-      email = _req$body.email,
-      password = _req$body.password;
-  User.findOne({
-    email: email
-  }, function (err, user) {
-    if (user) {
-      res.status(500).send({
-        message: "User already exists!"
-      });
-    } else {
-      var _user = new User({
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        password: password
-      });
-
-      _user.save(function (err) {
-        if (err) {
-          res.status(500).send(err);
-        } else {
-          res.status(200).send({
-            message: "Welcome to the BitBazaar Community!"
+        case 7:
+          res.json({
+            status: 'ok'
           });
-        }
-      });
-    }
-  });
-});
-app.post("/login", function (req, res) {
-  var _req$body2 = req.body,
-      email = _req$body2.email,
-      password = _req$body2.password;
-  User.findOne({
-    email: email
-  }, function (err, user) {
-    if (user) {
-      if (password === user.password) {
-        res.status(200).send({
-          message: "Welcome to the BitBazaar Community!",
-          user: user
-        });
-      } else {
-        res.status(500).send({
-          message: "Incorrect password!"
-        });
+          _context.next = 13;
+          break;
+
+        case 10:
+          _context.prev = 10;
+          _context.t0 = _context["catch"](1);
+          res.json({
+            status: 'error',
+            error: 'Duplicate email'
+          });
+
+        case 13:
+        case "end":
+          return _context.stop();
       }
-    } else {
-      res.send({
-        message: "User not registered!"
-      });
+    }
+  }, null, null, [[1, 10]]);
+});
+app.post('/api/login', function _callee2(req, res) {
+  var user, isPasswordValid, token;
+  return regeneratorRuntime.async(function _callee2$(_context2) {
+    while (1) {
+      switch (_context2.prev = _context2.next) {
+        case 0:
+          _context2.next = 2;
+          return regeneratorRuntime.awrap(User.findOne({
+            email: req.body.email
+          }));
+
+        case 2:
+          user = _context2.sent;
+
+          if (user) {
+            _context2.next = 5;
+            break;
+          }
+
+          return _context2.abrupt("return", {
+            status: 'error',
+            error: 'Invalid login'
+          });
+
+        case 5:
+          _context2.next = 7;
+          return regeneratorRuntime.awrap(bcrypt.compare(req.body.password, user.password));
+
+        case 7:
+          isPasswordValid = _context2.sent;
+
+          if (!isPasswordValid) {
+            _context2.next = 13;
+            break;
+          }
+
+          token = jwt.sign({
+            name: user.name,
+            email: user.email
+          }, 'secret123');
+          return _context2.abrupt("return", res.json({
+            status: 'ok',
+            user: token
+          }));
+
+        case 13:
+          return _context2.abrupt("return", res.json({
+            status: 'error',
+            user: false
+          }));
+
+        case 14:
+        case "end":
+          return _context2.stop();
+      }
     }
   });
-});
-app.listen(4000, function () {
-  console.log("Server is running on port 4000");
 });
