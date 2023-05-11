@@ -3,6 +3,7 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 const User = require('./models/user.model')
+const Member = require('./models/newsletter.model')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 
@@ -21,7 +22,7 @@ mongoose.connect(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: tr
   .then(() => app.listen(PORT, () => console.log(`Server Running on Port: http://localhost:${PORT}`)))
   .catch((error) => console.log(`${error} did not connect`));
 
-  app.post('/api/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
 	console.log(req.body)
 	try {
 		const newPassword = await bcrypt.hash(req.body.password, 10)
@@ -65,3 +66,17 @@ app.post('/api/login', async (req, res) => {
 		return res.json({ status: 'error', user: false })
 	}
 })
+
+app.post('/api/newsletter', async (req, res) => {
+	console.log(req.body)
+	try {
+		const newMember = await Member.create({
+			email: req.body.email,
+		})
+		res.json({ status: 'ok' })
+	} catch (err) {
+		res.json({ status: 'error', error: 'Duplicate email' })
+	}
+}
+)
+

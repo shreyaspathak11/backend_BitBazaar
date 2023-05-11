@@ -10,6 +10,8 @@ var bodyParser = require('body-parser');
 
 var User = require('./models/user.model');
 
+var Member = require('./models/newsletter.model');
+
 var jwt = require('jsonwebtoken');
 
 var bcrypt = require('bcryptjs');
@@ -136,4 +138,40 @@ app.post('/api/login', function _callee2(req, res) {
       }
     }
   });
+});
+app.post('/api/newsletter', function _callee3(req, res) {
+  var newMember;
+  return regeneratorRuntime.async(function _callee3$(_context3) {
+    while (1) {
+      switch (_context3.prev = _context3.next) {
+        case 0:
+          console.log(req.body);
+          _context3.prev = 1;
+          _context3.next = 4;
+          return regeneratorRuntime.awrap(Member.create({
+            email: req.body.email
+          }));
+
+        case 4:
+          newMember = _context3.sent;
+          res.json({
+            status: 'ok'
+          });
+          _context3.next = 11;
+          break;
+
+        case 8:
+          _context3.prev = 8;
+          _context3.t0 = _context3["catch"](1);
+          res.json({
+            status: 'error',
+            error: 'Duplicate email'
+          });
+
+        case 11:
+        case "end":
+          return _context3.stop();
+      }
+    }
+  }, null, null, [[1, 8]]);
 });
