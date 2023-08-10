@@ -16,6 +16,14 @@ var jwt = require('jsonwebtoken');
 
 var bcrypt = require('bcryptjs');
 
+var dotenv = require('dotenv');
+
+var _require = require('google-auth-library'),
+    OAuth2Client = _require.OAuth2Client;
+
+var Google = require('./models/google.model');
+
+dotenv.config();
 var app = express();
 app.use(bodyParser.json({
   limit: '30mb',
@@ -26,7 +34,8 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 app.use(cors());
-var CONNECTION_URL = 'mongodb+srv://dummy123:dummy123@bitbazaar.imeimd6.mongodb.net/';
+var client = new OAuth2Client(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+var CONNECTION_URL = process.env.MONGODB_URI;
 var PORT = process.env.PORT || 5000;
 mongoose.connect(CONNECTION_URL, {
   useNewUrlParser: true,
@@ -174,4 +183,66 @@ app.post('/api/newsletter', function _callee3(req, res) {
       }
     }
   }, null, null, [[1, 8]]);
+});
+app.post('/api/google-login', function _callee4(req, res) {
+  var token, ticket, _ticket$getPayload, name, email, picture, user;
+
+  return regeneratorRuntime.async(function _callee4$(_context4) {
+    while (1) {
+      switch (_context4.prev = _context4.next) {
+        case 0:
+          console.log(req.body);
+          token = req.body.token;
+          _context4.next = 4;
+          return regeneratorRuntime.awrap(client.verifyIdToken({
+            idToken: token,
+            audience: process.env.CLIENT_ID
+          }));
+
+        case 4:
+          ticket = _context4.sent;
+          _ticket$getPayload = ticket.getPayload(), name = _ticket$getPayload.name, email = _ticket$getPayload.email, picture = _ticket$getPayload.picture;
+          _context4.next = 8;
+          return regeneratorRuntime.awrap(Google.findOne({
+            email: email
+          }));
+
+        case 8:
+          user = _context4.sent;
+
+          if (user) {
+            _context4.next = 16;
+            break;
+          }
+
+          _context4.next = 12;
+          return regeneratorRuntime.awrap(Google.create({
+            name: name,
+            email: email,
+            picture: picture
+          }));
+
+        case 12:
+          res.status(201);
+          res.json({
+            name: name,
+            email: email,
+            picture: picture
+          });
+          _context4.next = 17;
+          break;
+
+        case 16:
+          res.json({
+            name: name,
+            email: email,
+            picture: picture
+          });
+
+        case 17:
+        case "end":
+          return _context4.stop();
+      }
+    }
+  });
 });

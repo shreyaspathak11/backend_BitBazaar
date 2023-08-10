@@ -6,16 +6,19 @@ const User = require('./models/user.model')
 const Member = require('./models/newsletter.model')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
+const dotenv = require('dotenv')
+const { OAuth2Client } = require('google-auth-library');
+const Google = require('./models/google.model')
 
+dotenv.config()
 const app = express();
 
 app.use(bodyParser.json({ limit: '30mb', extended: true }))
 app.use(bodyParser.urlencoded({ limit: '30mb', extended: true }))
 app.use(cors());
 
-
-
-const CONNECTION_URL = 'mongodb+srv://dummy123:dummy123@bitbazaar.imeimd6.mongodb.net/';
+const client = new OAuth2Client(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+const CONNECTION_URL = process.env.MONGODB_URI;
 const PORT = process.env.PORT|| 5000;
 
 mongoose.connect(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -80,3 +83,24 @@ app.post('/api/newsletter', async (req, res) => {
 }
 )
 
+app.post('/api/google-login', async (req, res) => {
+	console.log(req.body)
+	const { token } = req.body;
+	const ticket = await client.verifyIdToken({
+	  idToken: token,
+	  audience: process.env.CLIENT_ID,
+	});
+	const { name, email, picture } = ticket.getPayload();
+	const user = await Google.findOne({
+		email: email,
+	})
+
+	if (!user) {	
+	await Google.create({ name, email, picture });
+	res.status(201);
+	res.json({ name, email, picture });
+	} 
+	else {
+		res.json({ name, email, picture });
+	}
+});
