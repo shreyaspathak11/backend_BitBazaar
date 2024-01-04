@@ -24,6 +24,9 @@ mongoose.connect(CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: tr
   .then(() => app.listen(PORT, () => console.log(`Server Running on Port: http://localhost:${PORT}`)))
   .catch((error) => console.log(`${error} did not connect`));
 
+
+
+//Register API
 app.post('/api/register', async (req, res) => {
 	console.log(req.body)
 	try {
@@ -39,6 +42,34 @@ app.post('/api/register', async (req, res) => {
 		res.json({ status: 'error', error: 'Duplicate email' })
 	}
 })
+
+const jwtSecret = process.env.JWT_SECRET
+
+//verify token middleware
+const verifyToken = (req, res, next) => {
+	const token = req.headers['x-access-token']
+
+	if (!token) {
+		return res.json({ status: 'error', error: 'Token missing' })
+	}
+
+	try {
+		const decoded = jwt.verify(token, jwtSecret)
+		req.user = decoded
+	} catch (err) {
+		return res.json({ status: 'error', error: 'Invalid token' })
+	}
+
+	return next()
+}
+
+//get user api
+
+app.get('/api/user', verifyToken, (req, res) => {
+	return res.json({ status: 'ok You are Authenticated', data: req.user })
+})
+
+//login API
 
 app.post('/api/login', async (req, res) => {
 	const user = await User.findOne({
@@ -60,15 +91,30 @@ app.post('/api/login', async (req, res) => {
 				name: user.name,
 				email: user.email,
 			},
-			'secret123'
+			jwtSecret,
+			{ expiresIn: '1h'}
 		)
 
-		return res.json({ status: 'ok', user: token })
+		return res.json({ auth: true, status: 'ok', user: token })
 	} else {
-		return res.json({ status: 'error', user: false })
+		return res.json({ auth: false, status: 'error', user: false, message: 'Invalid login details' })
 	}
 })
 
+
+//logout API
+app.get('/api/logout', function (req, res) {
+	res.json({ auth: false, token: null })
+})
+
+
+
+
+
+
+
+
+//Newsletter API
 app.post('/api/newsletter', async (req, res) => {
 	console.log(req.body)
 	try {
