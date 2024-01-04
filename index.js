@@ -14,11 +14,7 @@ const app = express();
 
 app.use(bodyParser.json({ limit: '30mb', extended: true }))
 app.use(bodyParser.urlencoded({ limit: '30mb', extended: true }))
-app.use(cors({
-  origin: 'https://bitcoin-backend.vercel.app',
-  methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH'],
-  credentials: true,
-}));
+app.use(cors());
 
 app.get('/', (req, res) => {
 	res.send('Hello to BitBazaar API')
