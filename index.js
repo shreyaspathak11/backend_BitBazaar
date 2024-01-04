@@ -22,6 +22,9 @@ app.use(cors(
   }
 ));
 
+app.get('/', (req, res) => {
+	res.send('Hello to BitBazaar API')
+})
 
 const CONNECTION_URL = process.env.MONGODB_URI;
 const PORT = process.env.PORT|| 5000;
